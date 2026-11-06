@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Científica</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        background: linear-gradient(145deg, #1e2b3c 0%, #0f1a26 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        padding: 0.8rem;
+    }
+
+    .calculadora {
+        background: #1e2a36;
+        border-radius: 2rem;
+        box-shadow: 0 25px 40px rgba(0,0,0,0.65), inset 0 1px 4px rgba(255,255,255,0.08);
+        padding: 1.4rem;
+        width: 100%;
+        max-width: 520px;
+        border: 1px solid #3e4d5e;
+    }
+
+    .pantalla {
+        background: #0b1219;
+        border-radius: 1.4rem;
+        padding: 0.8rem 1.2rem;
+        margin-bottom: 1.2rem;
+        box-shadow: inset 0 8px 12px rgba(0,0,0,0.7), 0 2px 4px rgba(255,255,255,0.05);
+        border: 1px solid #2d3f4f;
+    }
+
+    .pantalla .modo {
+        font-size: 0.7rem;
+        color: #7aa9e0;
+        text-align: right;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.2rem;
+        font-weight: 600;
+    }
+
+    .pantalla input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        text-align: right;
+        font-size: 2.4rem;
+        font-weight: 300;
+        color: #eef5ff;
+        letter-spacing: 0.02em;
+        font-family: 'Fira Mono', 'Courier New', monospace;
+        line-height: 1.2;
+        padding: 0.1rem 0;
+        caret-color: transparent;
+        text-shadow: 0 0 8px rgba(120,180,255,0.4);
+    }
+
+    .botones {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.55rem;
+    }
+
+    button {
+        border: none;
+        background: #283542;
+        color: #f0f7ff;
+        font-size: 1.15rem;
+        font-weight: 500;
+        padding: 0.75rem 0.2rem;
+        border-radius: 0.9rem;
+        cursor: pointer;
+        box-shadow: 0 4px 0 #0e131a, 0 5px 8px rgba(0,0,0,0.4);
+        transition: all 0.06s ease;
+        font-family: inherit;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #3f5062;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 48px;
+    }
+
+    button:active {
+        transform: translateY(3px);
+        box-shadow: 0 1px 0 #0e131a, 0 3px 6px rgba(0,0,0,0.5);
+    }
+
+    .fn {
+        background: #24303d;
+        color: #9fc4ec;
+        border-color: #3a4f63;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .operador {
+        background: #2e4258;
+        color: #d9e9ff;
+        border-color: #4e6580;
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+
+    .numero {
+        background: #1f2b36;
+        border-color: #3c4d5e;
+        font-size: 1.4rem;
+        font-weight: 500;
+    }
+
+    .igual {
+        background: #3f7eb6;
+        color: white;
+        border-color: #6ca0d0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .limpiar {
+        background: #713b47;
+        color: #ffe6e9;
+        border-color: #9e5f6d;
+        font-weight: 700;
+    }
+
+    .borrar {
+        background: #604c3a;
+        color: #ffeedb;
+        border-color: #8b735b;
+    }
+
+    .toggle {
+        background: #2f4a3e;
+        color: #b8f0d0;
+        border-color: #4a7a63;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .toggle.activo {
+        background: #3c7a5c;
+        color: #ffffff;
+        box-shadow: 0 0 0 2px #7affb0 inset, 0 4px 0 #0e131a;
+    }
+
+    @media (max-width: 480px) {
+        .calculadora { padding: 1rem; border-radius: 1.5rem; }
+        .pantalla input { font-size: 1.8rem; }
+        button { font-size: 0.95rem; min-height: 40px; padding: 0.5rem 0.1rem; border-radius: 0.7rem; }
+        .fn { font-size: 0.8rem; }
+        .numero { font-size: 1.15rem; }
+        .operador { font-size: 1.1rem; }
+        .igual { font-size: 1.2rem; }
+        .botones { gap: 0.4rem; }
+    }
+</style>
+</head>
+<body>
+
+<div class="calculadora">
+    <div class="pantalla">
+        <div class="modo" id="modo">DEG</div>
+        <input type="text" id="display" placeholder="0" readonly value="0" aria-label="pantalla de calculadora">
+    </div>
+
+    <div class="botones">
+        <!-- Fila 1: modo, constantes, limpiar -->
+        <button class="toggle" id="btnDegRad">DEG</button>
+        <button class="fn" data-fn="pi">π</button>
+        <button class="fn" data-fn="e">e</button>
+        <button class="limpiar" data-accion="limpiar">AC</button>
+        <button class="borrar" data-accion="borrar">←</button>
+
+        <!-- Fila 2: potencias, raíces, factorial -->
+        <button class="fn" data-fn="x2">x²</button>
+        <button class="fn" data-fn="x3">x³</button>
+        <button class="fn" data-fn="xy">xʸ</button>
+        <button class="fn" data-fn="sqrt">√</button>
+        <button class="fn" data-fn="cbrt">∛</button>
+
+        <!-- Fila 3: trig y log -->
+        <button class="fn" data-fn="sin">sin</button>
+        <button class="fn" data-fn="cos">cos</button>
+        <button class="fn" data-fn="tan">tan</button>
+        <button class="fn" data-fn="log">log</button>
+        <button class="fn" data-fn="ln">ln</button>
+
+        <!-- Fila 4: inversas y factorial -->
+        <button class="fn" data-fn="asin">sin⁻¹</button>
+        <button class="fn" data-fn="acos">cos⁻¹</button>
+        <button class="fn" data-fn="atan">tan⁻¹</button>
+        <button class="fn" data-fn="fact">n!</button>
+        <button class="fn" data-fn="inv">1/x</button>
+
+        <!-- Fila 5: operadores y paréntesis -->
+        <button class="fn" data-fn="parA">(</button>
+        <button class="fn" data-fn="parC">)</button>
+        <button class="operador" data-accion="porcentaje">%</button>
+        <button class="operador" data-accion="dividir">÷</button>
+        <button class="fn" data-fn="exp">EXP</button>
+
+        <!-- Fila 6: números 7-9 y multiplicar -->
+        <button class="numero" data-numero="7">7</button>
+        <button class="numero" data-numero="8">8</button>
+        <button class="numero" data-numero="9">9</button>
+        <button class="operador" data-accion="multiplicar">×</button>
+        <button class="fn" data-fn="abs">|x|</button>
+
+        <!-- Fila 7: números 4-6 y restar -->
+        <button class="numero" data-numero="4">4</button>
+        <button class="numero" data-numero="5">5</button>
+        <button class="numero" data-numero="6">6</button>
+        <button class="operador" data-accion="restar">−</button>
+        <button class="fn" data-accion="cambiar-signo">±</button>
+
+        <!-- Fila 8: números 1-3 y sumar -->
+        <button class="numero" data-numero="1">1</button>
+        <button class="numero" data-numero="2">2</button>
+        <button class="numero" data-numero="3">3</button>
+        <button class="operador" data-accion="sumar">+</button>
+        <button class="fn" data-fn="ans">Ans</button>
+
+        <!-- Fila 9: 0, punto, igual (ocupa 2 columnas) -->
+        <button class="numero" data-numero="0" style="grid-column: span 2;">0</button>
+        <button class="numero" data-accion="punto">.</button>
+        <button class="igual" data-accion="igual" style="grid-column: span 2;">=</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    const display = document.getElementById('display');
+    const modoLabel = document.getElementById('modo');
+    const btnDegRad = document.getElementById('btnDegRad');
+
+    // Estado
+    let currentInput = '0';        // string mostrado en pantalla
+    let previousValue = null;      // número anterior (para operaciones binarias)
+    let operator = null;           // '+', '-', '*', '/', '^'
+    let waitingForNewValue = false;
+    let resetOnNextNumber = false;
+    let isDegrees = true;          // true = DEG, false = RAD
+    let lastAnswer = 0;            // último resultado (Ans)
+
+    // ---------- Utilidades ----------
+    function updateDisplay() {
+        display.value = currentInput;
+    }
+
+    function toNumber(str) {
+        const n = parseFloat(str);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function formatResult(value) {
+        if (!isFinite(value)) return 'Error';
+        if (Number.isNaN(value)) return 'Error';
+        const rounded = Math.round(value * 1e12) / 1e12;
+        if (Number.isInteger(rounded)) return rounded.toString();
+        let str = rounded.toFixed(12).replace(/\.?0+$/, '');
+        return str === '' || str === '-' ? '0' : str;
+    }
+
+    // Convierte ángulo a radianes según el modo
+    function toRad(angle) {
+        return isDegrees ? angle * Math.PI / 180 : angle;
+    }
+    function fromRad(rad) {
+        return isDegrees ? rad * 180 / Math.PI : rad;
+    }
+
+    // ---------- Acciones básicas ----------
+    function clearAll() {
+        currentInput = '0';
+        previousValue = null;
+        operator = null;
+        waitingForNewValue = false;
+        resetOnNextNumber = false;
+        updateDisplay();
+    }
+
+    function backspace() {
+        if (resetOnNextNumber) { clearAll(); return; }
+        if (waitingForNewValue) {
+            currentInput = '0';
+            waitingForNewValue = false;
+            updateDisplay();
+            return;
+        }
+        if (currentInput.length > 1) {
+            currentInput = currentInput.slice(0, -1);
+        } else {
+            currentInput = '0';
+        }
+        updateDisplay();
+    }
+
+    function appendNumber(num) {
+        if (waitingForNewValue || resetOnNextNumber) {
+            currentInput = num;
+            waitingForNewValue = false;
+            resetOnNextNumber = false;
+        } else {
+            if (currentInput === '0' && num !== '.') {
+                currentInput = num;
+            } else if (currentInput.length < 18) {
+                currentInput += num;
+            }
+        }
+        updateDisplay();
+    }
+
+    function appendDecimal() {
+        if (waitingForNewValue || resetOnNextNumber) {
+            currentInput = '0.';
+            waitingForNewValue = false;
+            resetOnNextNumber = false;
+            updateDisplay();
+            return;
+        }
+        if (currentInput.includes('.')) return;
+        if (currentInput === '' || currentInput === '-') currentInput = '0.';
+        else currentInput += '.';
+        updateDisplay();
+    }
+
+    function toggleSign() {
+        if (waitingForNewValue || resetOnNextNumber) {
+            currentInput = '0';
+            waitingForNewValue = false;
+            resetOnNextNumber = false;
+        }
+        if (currentInput === '0' || currentInput === 'Error') return;
+        if (currentInput.startsWith('-')) currentInput = currentInput.slice(1);
+        else currentInput = '-' + currentInput;
+        updateDisplay();
+    }
+
+    // ---------- Cálculo de operaciones binarias ----------
+    function calcular(a, b, op) {
+        switch (op) {
+            case '+': return a + b;
+            case '-': return a - b;
+            case '*': return a * b;
+            case '/': return b === 0 ? NaN : a / b;
+            case '^': return Math.pow(a, b);
+            default: return b;
+        }
+    }
+
+    function handleOperator(op) {
+        const inputNum = toNumber(currentInput);
+
+        if (operator !== null && !waitingForNewValue) {
+            const result = calcular(previousValue, inputNum, operator);
+            if (!isFinite(result)) {
+                clearAll();
+                currentInput = 'Error';
+                updateDisplay();
+                return;
+            }
+            previousValue = result;
+            currentInput = formatResult(result);
+            updateDisplay();
+        } else if (operator === null) {
+            previousValue = inputNum;
+        }
+
+        operator = op;
+        waitingForNewValue = true;
+        resetOnNextNumber = false;
+    }
+
+    function handleEquals() {
+        if (operator === null) {
+            // Sin operador pendiente: solo fija el valor actual como Ans
+            lastAnswer = toNumber(currentInput);
+            resetOnNextNumber = true;
+            return;
+        }
+
+        const inputNum = toNumber(currentInput);
+        const secondOperand = waitingForNewValue ? previousValue : inputNum;
+        const result = calcular(previousValue, secondOperand, operator);
+
+        if (!isFinite(result)) {
+            clearAll();
+            currentInput = 'Error';
+            updateDisplay();
+            return;
+        }
+
+        lastAnswer = result;
+        currentInput = formatResult(result);
+        updateDisplay();
+
+        previousValue = null;
+        operator = null;
+        waitingForNewValue = false;
+        resetOnNextNumber = true;
+    }
+
+    // ---------- Funciones científicas (aplican al valor actual) ----------
+    function aplicarFuncion(fn) {
+        // Si estamos esperando nuevo valor tras un operador, usamos el valor previo
+        let valor;
+        if (waitingForNewValue && previousValue !== null) {
+            valor = previousValue;
+        } else {
+            valor = toNumber(currentInput);
+        }
+
+        let resultado;
+        switch (fn) {
+            case 'sin':  resultado = Math.sin(toRad(valor)); break;
+            case 'cos':  resultado = Math.cos(toRad(valor)); break;
+            case 'tan':  resultado = Math.tan(toRad(valor)); break;
+            case 'asin':
+                if (valor < -1 || valor > 1) { resultado = NaN; }
+                else resultado = fromRad(Math.asin(valor));
+                break;
+            case 'acos':
+                if (valor < -1 || valor > 1) { resultado = NaN; }
+                else resultado = fromRad(Math.acos(valor));
+                break;
+            case 'atan': resultado = fromRad(Math.atan(valor)); break;
+            case 'log':
+                if (valor <= 0) { resultado = NaN; }
+                else resultado = Math.log10(valor);
+                break;
+            case 'ln':
+                if (valor <= 0) { resultado = NaN; }
+                else resultado = Math.log(valor);
+                break;
+            case 'sqrt':
+                if (valor < 0) { resultado = NaN; }
+                else resultado = Math.sqrt(valor);
+                break;
+            case 'cbrt': resultado = Math.cbrt(valor); break;
+            case 'x2':   resultado = valor * valor; break;
+            case 'x3':   resultado = valor * valor * valor; break;
+            case 'inv':
+                if (valor === 0) { resultado = NaN; }
+                else resultado = 1 / valor;
+                break;
+            case 'abs':  resultado = Math.abs(valor); break;
+            case 'fact':
+                if (valor < 0 || !Number.isInteger(valor)) { resultado = NaN; }
+                else if (valor > 170) { resultado = Infinity; }
+                else {
+                    let r = 1;
+                    for (let i = 2; i <= valor; i++) r *= i;
+                    resultado = r;
+                }
+                break;
+            case 'exp':
+                // EXP no es una función directa: escribe "e" en la pantalla para notación científica
+                // Se maneja aparte en el listener
+                return;
+            default: return;
+        }
+
+        if (!isFinite(resultado) || Number.isNaN(resultado)) {
+            currentInput = 'Error';
+            updateDisplay();
+            return;
+        }
+
+        currentInput = formatResult(resultado);
+        updateDisplay();
+        waitingForNewValue = false;
+        resetOnNextNumber = true;
+    }
+
+    // Inserta una constante (π o e)
+    function insertConstante(c) {
+        const valor = (c === 'pi') ? Math.PI : Math.E;
+        if (waitingForNewValue || resetOnNextNumber) {
+            currentInput = formatResult(valor);
+            waitingForNewValue = false;
+            resetOnNextNumber = false;
+        } else {
+            // Si el display es "0", reemplaza; si no, multiplica implícitamente
+            if (currentInput === '0' || currentInput === 'Error') {
+                currentInput = formatResult(valor);
+            } else {
+                currentInput = formatResult(toNumber(currentInput) * valor);
+            }
+        }
+        updateDisplay();
+    }
+
+    // Inserta paréntesis (visual, no evalúa expresiones complejas)
+    function insertParentesis(p) {
+        if (waitingForNewValue || resetOnNextNumber) {
+            currentInput = (p === '(') ? '(' : '0';
+            waitingForNewValue = false;
+            resetOnNextNumber = false;
+        } else if (p === '(') {
+            if (currentInput === '0') currentInput = '(';
+            else currentInput += '(';
+        } else {
+            // Si el usuario está escribiendo un número, cerramos paréntesis
+            currentInput += ')';
+        }
+        updateDisplay();
+    }
+
+    // ---------- Manejo de clicks ----------
+    function handleButtonClick(e) {
+        const btn = e.currentTarget;
+
+        // Número
+        if (btn.dataset.numero) {
+            appendNumber(btn.dataset.numero);
+            return;
+        }
+
+        // Función científica
+        if (btn.dataset.fn) {
+            const fn = btn.dataset.fn;
+            if (fn === 'pi' || fn === 'e') {
+                insertConstante(fn);
+            } else if (fn === 'parA' || fn === 'parC') {
+                insertParentesis(fn === 'parA' ? '(' : ')');
+            } else if (fn === 'xy') {
+                handleOperator('^');
+            } else if (fn === 'ans') {
+                if (waitingForNewValue || resetOnNextNumber) {
+                    currentInput = formatResult(lastAnswer);
+                    waitingForNewValue = false;
+                    resetOnNextNumber = false;
+                } else {
+                    if (currentInput === '0') currentInput = formatResult(lastAnswer);
+                    else currentInput = formatResult(toNumber(currentInput) * lastAnswer);
+                }
+                updateDisplay();
+            } else if (fn === 'exp') {
+                // EXP: convierte el número actual a notación científica usando 'e'
+                // Ejemplo: 5 -> 5e0 ; simplificamos insertando 'e' como carácter
+                if (!currentInput.includes('e')) {
+                    currentInput += 'e';
+                    updateDisplay();
+                }
+            } else {
+                aplicarFuncion(fn);
+            }
+            return;
+        }
+
+        const accion = btn.dataset.accion;
+        if (!accion) return;
+
+        switch (accion) {
+            case 'limpiar': clearAll(); break;
+            case 'borrar': backspace(); break;
+            case 'punto': appendDecimal(); break;
+            case 'cambiar-signo': toggleSign(); break;
+            case 'porcentaje':
+                // Porcentaje del valor actual (sobre 100)
+                currentInput = formatResult(toNumber(currentInput) / 100);
+                updateDisplay();
+                resetOnNextNumber = true;
+                break;
+            case 'sumar': handleOperator('+'); break;
+            case 'restar': handleOperator('-'); break;
+            case 'multiplicar': handleOperator('*'); break;
+            case 'dividir': handleOperator('/'); break;
+            case 'igual': handleEquals(); break;
+        }
+    }
+
+    // ---------- Cambio DEG/RAD ----------
+    function toggleDegRad() {
+        isDegrees = !isDegrees;
+        const texto = isDegrees ? 'DEG' : 'RAD';
+        modoLabel.textContent = texto;
+        btnDegRad.textContent = texto;
+        btnDegRad.classList.toggle('activo', !isDegrees);
+    }
+
+    btnDegRad.addEventListener('click', toggleDegRad);
+
+    // Asignar listeners
+    document.querySelectorAll('.botones button').forEach(btn => {
+        if (btn.id === 'btnDegRad') return;
+        btn.addEventListener('click', handleButtonClick);
+    });
+
+    // ---------- Teclado ----------
+    window.addEventListener('keydown', (e) => {
+        const key = e.key;
+
+        if (/^[0-9]$/.test(key)) { e.preventDefault(); appendNumber(key); }
+        else if (key === '.' || key === ',') { e.preventDefault(); appendDecimal(); }
+        else if (key === '+') { e.preventDefault(); handleOperator('+'); }
+        else if (key === '-') { e.preventDefault(); handleOperator('-'); }
+        else if (key === '*') { e.preventDefault(); handleOperator('*'); }
+        else if (key === '/') { e.preventDefault(); handleOperator('/'); }
+        else if (key === '^') { e.preventDefault(); handleOperator('^'); }
+        else if (key === 'Enter' || key === '=') { e.preventDefault(); handleEquals(); }
+        else if (key === 'Backspace') { e.preventDefault(); backspace(); }
+        else if (key === 'Escape') { e.preventDefault(); clearAll(); }
+        else if (key === 'p') { e.preventDefault(); insertConstante('pi'); }
+        else if (key === 'e') { e.preventDefault(); insertConstante('e'); }
+        else if (key === '!') { e.preventDefault(); aplicarFuncion('fact'); }
+        else if (key === 's') { e.preventDefault(); aplicarFuncion('sin'); }
+        else if (key === 'c') { e.preventDefault(); aplicarFuncion('cos'); }
+        else if (key === 't') { e.preventDefault(); aplicarFuncion('tan'); }
+        else if (key === 'l') { e.preventDefault(); aplicarFuncion('log'); }
+        else if (key === 'n') { e.preventDefault(); aplicarFuncion('ln'); }
+        else if (key === 'r') { e.preventDefault(); aplicarFuncion('sqrt'); }
+        else if (key === '%') { e.preventDefault(); currentInput = formatResult(toNumber(currentInput) / 100); updateDisplay(); resetOnNextNumber = true; }
+    });
+
+    // Inicializar
+    updateDisplay();
+    btnDegRad.classList.remove('activo');
+})();
+</script>
+</body>
+</html>
